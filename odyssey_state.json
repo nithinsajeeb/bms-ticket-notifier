@@ -1,94 +1,13 @@
 {
-  "shows": {
-    "BWCB|50623|20260805|ELITE": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "08:00 AM",
-      "date": "20260805",
-      "cat": "ELITE",
-      "price": "508.34",
-      "status": "3"
-    },
-    "BWCB|50623|20260805|LOUNGER": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "08:00 AM",
-      "date": "20260805",
-      "cat": "LOUNGER",
-      "price": "508.34",
-      "status": "3"
-    },
-    "BWCB|50624|20260805|ELITE": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "11:45 AM",
-      "date": "20260805",
-      "cat": "ELITE",
-      "price": "508.34",
-      "status": "2"
-    },
-    "BWCB|50624|20260805|LOUNGER": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "11:45 AM",
-      "date": "20260805",
-      "cat": "LOUNGER",
-      "price": "508.34",
-      "status": "3"
-    },
-    "BWCB|50625|20260805|ELITE": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "03:30 PM",
-      "date": "20260805",
-      "cat": "ELITE",
-      "price": "508.34",
-      "status": "2"
-    },
-    "BWCB|50625|20260805|LOUNGER": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "03:30 PM",
-      "date": "20260805",
-      "cat": "LOUNGER",
-      "price": "508.34",
-      "status": "3"
-    },
-    "BWCB|50626|20260805|ELITE": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "07:15 PM",
-      "date": "20260805",
-      "cat": "ELITE",
-      "price": "508.34",
-      "status": "2"
-    },
-    "BWCB|50626|20260805|LOUNGER": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "07:15 PM",
-      "date": "20260805",
-      "cat": "LOUNGER",
-      "price": "508.34",
-      "status": "3"
-    },
-    "BWCB|50627|20260805|ELITE": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "11:00 PM",
-      "date": "20260805",
-      "cat": "ELITE",
-      "price": "508.34",
-      "status": "3"
-    },
-    "BWCB|50627|20260805|LOUNGER": {
-      "venue": "Broadway Cinemas: Coimbatore",
-      "time": "11:00 PM",
-      "date": "20260805",
-      "cat": "LOUNGER",
-      "price": "508.34",
-      "status": "3"
-    }
-  },
+  "shows": {},
   "dates": {
-    "20260729": "AVAILABLE",
+    "20260729": "BOOKABLE",
     "20260730": "AVAILABLE",
     "20260731": "AVAILABLE",
     "20260801": "AVAILABLE",
     "20260802": "AVAILABLE",
     "20260803": "AVAILABLE",
     "20260804": "AVAILABLE",
-    "20260805": "BOOKABLE"
+    "20260805": "AVAILABLE"
   }
 }
