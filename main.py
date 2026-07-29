@@ -15,15 +15,15 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 import requests
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 # ──────────────────────────────────────────────────────────────────────
 # CONFIGURATION — one entry per film/job to watch
 # ──────────────────────────────────────────────────────────────────────
 try:
-    BMS_WATCHES = json.loads(os.getenv("BMS_WATCHES", "[]"))
+    BMS_WATCHES = json.loads(os.environ["BMS_WATCHES"])
 except KeyError:
     sys.exit("❌ BMS_WATCHES env var is not set.")
 except json.JSONDecodeError as e:
