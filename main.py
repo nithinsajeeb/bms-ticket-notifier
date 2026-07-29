@@ -15,25 +15,23 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ──────────────────────────────────────────────────────────────────────
-# CONFIGURATION — edit these or set via env vars
+# CONFIGURATION — one entry per film/job to watch
 # ──────────────────────────────────────────────────────────────────────
-CONFIG = {
-    "url": os.getenv(
-        "BMS_URL",
-        "https://in.bookmyshow.com/movies/chennai/dhurandhar-the-revenge/buytickets/ET00478890"
-    ),
-    "dates": os.getenv("BMS_DATES", ""),          # comma-separated YYYYMMDD, empty = from URL
-    "theatre": os.getenv("BMS_THEATRE", ""),       # substring filter, empty = all
-    "time_period": os.getenv("BMS_TIME", ""),      # e.g. "evening,night", empty = all
-}
+try:
+    BMS_WATCHES = json.loads(os.environ["BMS_WATCHES"])
+except KeyError:
+    sys.exit("❌ BMS_WATCHES env var is not set.")
+except json.JSONDecodeError as e:
+    sys.exit(f"❌ BMS_WATCHES env var is not valid JSON: {e}")
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 RESEND_TO_EMAIL = os.getenv("RESEND_TO_EMAIL", "")
 RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "aviiciii@resend.dev")
-
-STATE_FILE = os.getenv("BMS_STATE_FILE", "bms_state.json")
 
 # ──────────────────────────────────────────────────────────────────────
 # CONSTANTS
@@ -233,6 +231,8 @@ def parse_shows(data):
                 vcode = addl.get("venueCode", "")
 
                 for st in card.get("showtimes", []):
+                    # print(json.dumps(st, indent=2))
+                    # sys.exit(0)
                     sa = st.get("additionalData", {})
                     date_code = str(
                         sa.get("showDateCode", "")
@@ -310,16 +310,16 @@ def filter_shows(shows, theatre_filter, time_periods, date_codes):
 # ──────────────────────────────────────────────────────────────────────
 # STATE (for change detection between runs)
 # ──────────────────────────────────────────────────────────────────────
-def load_state():
+def load_state(state_file):
     try:
-        with open(STATE_FILE) as f:
+        with open(state_file) as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 
-def save_state(state):
-    with open(STATE_FILE, "w") as f:
+def save_state(state, state_file):
+    with open(state_file, "w") as f:
         json.dump(state, f, indent=2)
 
 
@@ -525,26 +525,26 @@ def send_email(subject, changes, shows, movie_info):
 # ──────────────────────────────────────────────────────────────────────
 # MAIN
 # ──────────────────────────────────────────────────────────────────────
-def main():
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{now_str}] BMS Ticket Checker — CI mode")
+def process_watch(watch):
+    """Run one BMS_WATCHES entry end-to-end: fetch, filter, diff, notify."""
+    label = watch.get("name", watch["url"])
+    print(f"\n=== {label} ===")
 
-    # Parse config
-    parsed = parse_bms_url(CONFIG["url"])
+    parsed = parse_bms_url(watch["url"])
     event_code = parsed["event_code"]
     region_slug = parsed["region_slug"]
     url_date = parsed.get("date_code", "")
 
     if not event_code or not region_slug:
-        print("  ❌ Invalid BMS_URL. Could not extract event/region.")
-        sys.exit(1)
+        print("  ❌ Invalid url. Could not extract event/region.")
+        return
 
     region_code, region_slug_r, lat, lon, geohash = resolve_region(
         region_slug
     )
 
     # Determine dates to check
-    raw_dates = CONFIG["dates"].strip()
+    raw_dates = watch.get("dates", "").strip()
     if raw_dates:
         date_list = [d.strip() for d in raw_dates.split(",") if d.strip()]
     elif url_date:
@@ -558,7 +558,7 @@ def main():
     # Fetch data for each date
     all_shows = []
     all_dates = []
-    movie_info = {"name": "Unknown", "language": ""}
+    movie_info = {"name": label, "language": ""}
 
     for dc in date_list:
         data = fetch_bms(event_code, dc, region_code,
@@ -567,36 +567,38 @@ def main():
             print(f"  ⚠️  No data for date {dc or '(default)'}")
             continue
 
-        if movie_info["name"] == "Unknown":
-            movie_info = parse_movie_info(data)
+        parsed_info = parse_movie_info(data)
+        if parsed_info["name"] != "Unknown Movie":
+            movie_info = parsed_info
 
         all_dates.extend(parse_dates(data))
         all_shows.extend(parse_shows(data))
 
     if not all_shows:
         print("  ❌ No showtimes found.")
-        sys.exit(0)
+        return
 
     print(f"  🎬 {movie_info['name']}  {movie_info['language']}")
 
     # Apply filters
     filtered = filter_shows(
         all_shows,
-        CONFIG["theatre"],
-        CONFIG["time_period"],
-        CONFIG["dates"],
+        watch.get("theatre", ""),
+        watch.get("time", ""),
+        watch.get("dates", ""),
     )
     print(f"  📊 {len(filtered)} showtime(s) after filters")
 
     # Build state & detect changes
+    state_file = watch.get("state", "bms_state.json")
     new_state = build_state(filtered, all_dates)
-    old_state = load_state()
+    old_state = load_state(state_file)
 
     changes = []
     if old_state:
         changes = detect_changes(old_state, new_state)
 
-    save_state(new_state)
+    save_state(new_state, state_file)
 
     if changes:
         print(f"\n  ⚡ {len(changes)} change(s) detected:")
@@ -618,6 +620,19 @@ def main():
         )
         fmt = f"|{s.screen_attr}" if s.screen_attr else ""
         print(f"    {s.venue_name} — {s.time}{fmt} [{s.date_code}] — {cats}")
+
+
+def main():
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{now_str}] BMS Ticket Checker — CI mode "
+          f"({len(BMS_WATCHES)} watch(es))")
+
+    for watch in BMS_WATCHES:
+        try:
+            process_watch(watch)
+        except Exception as e:
+            print(f"  ❌ Unexpected error for "
+                  f"{watch.get('name', watch.get('url'))}: {e}")
 
     print("\n  Done.")
 
