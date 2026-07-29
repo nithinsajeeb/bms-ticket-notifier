@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import json
+import time
 from html import escape
 from datetime import datetime
 from dataclasses import dataclass, field
@@ -167,14 +168,25 @@ def fetch_bms(event_code, date_code, region_code, region_slug,
         "memberId": "", "lsId": "", "subCode": "",
         "lat": lat, "lon": lon,
     }
-    try:
-        resp = requests.get(API_URL, headers=headers,
-                            params=params, timeout=15)
-        if resp.status_code == 200:
-            return resp.json()
-        print(f"  HTTP {resp.status_code}")
-    except requests.RequestException as e:
-        print(f"  Request failed: {e}")
+    retry_delays = (5, 15)  # seconds, before each retry after a block/limit
+    for attempt in range(len(retry_delays) + 1):
+        try:
+            resp = requests.get(API_URL, headers=headers,
+                                params=params, timeout=15)
+            if resp.status_code == 200:
+                return resp.json()
+            print(f"  HTTP {resp.status_code}")
+            if resp.status_code not in (403, 429):
+                return None
+        except requests.RequestException as e:
+            print(f"  Request failed: {e}")
+            return None
+
+        if attempt < len(retry_delays):
+            delay = retry_delays[attempt]
+            print(f"  Retrying in {delay}s...")
+            time.sleep(delay)
+
     return None
 
 
@@ -627,7 +639,9 @@ def main():
     print(f"[{now_str}] BMS Ticket Checker — CI mode "
           f"({len(BMS_WATCHES)} watch(es))")
 
-    for watch in BMS_WATCHES:
+    for i, watch in enumerate(BMS_WATCHES):
+        if i > 0:
+            time.sleep(8)  # space out requests to avoid rate-limiting/blocks
         try:
             process_watch(watch)
         except Exception as e:
