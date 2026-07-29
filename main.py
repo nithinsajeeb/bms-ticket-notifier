@@ -15,9 +15,9 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 import requests
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 # ──────────────────────────────────────────────────────────────────────
 # CONFIGURATION — one entry per film/job to watch
