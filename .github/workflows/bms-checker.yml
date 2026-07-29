@@ -32,7 +32,7 @@ jobs:
           RESEND_TO_EMAIL: ${{ secrets.RESEND_TO_EMAIL }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           BMS_WATCHES: ${{ secrets.BMS_WATCHES }}
-        run: uv run bms_main.py
+        run: uv run main.py
 
       - name: Commit updated state
         run: |
