@@ -14,25 +14,6 @@ jobs:
     permissions:
       contents: write
 
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        movie:
-          - name: Odyssey
-            url: https://in.bookmyshow.com/movies/coimbatore/the-odyssey/buytickets/ET00480917
-            dates: "20260808"
-            theatre: Broadway
-            time: morning,afternoon,evening,night
-            state: odyssey_state.json
-
-          - name: Spiderman
-            url: https://in.bookmyshow.com/movies/coimbatore/spider-man-brand-new-day/buytickets/ET00447840
-            dates: "20260808"
-            theatre: Broadway
-            time: morning,afternoon,evening,night
-            state: spiderman_state.json
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -45,19 +26,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - name: Run checker (${{ matrix.movie.name }})
+      - name: Run checker
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_TO_EMAIL: ${{ secrets.RESEND_TO_EMAIL }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-
-          BMS_URL: ${{ matrix.movie.url }}
-          BMS_DATES: ${{ matrix.movie.dates }}
-          BMS_THEATRE: ${{ matrix.movie.theatre }}
-          BMS_TIME: ${{ matrix.movie.time }}
-          BMS_STATE_FILE: ${{ matrix.movie.state }}
-
-        run: uv run main.py
+          BMS_WATCHES: ${{ secrets.BMS_WATCHES }}
+        run: uv run bms_main.py
 
       - name: Commit updated state
         run: |
